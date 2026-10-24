@@ -79,6 +79,14 @@ h2{font-weight:500;color:var(--mut);font-size:14px}
 .bn{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--card);border:1px solid var(--line);border-left:4px solid var(--acc);border-radius:14px;padding:12px 14px;margin-bottom:10px;font-size:14px}
 .bn button{font:inherit;font-size:13px;font-weight:600;border:0;border-radius:10px;padding:8px 12px;background:var(--acc);color:var(--bg);cursor:pointer;white-space:nowrap}
 .dh{display:flex;justify-content:space-between;font-size:13px;color:var(--mut);padding:20px 0 6px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+details{border-bottom:1px solid var(--line)}
+summary{cursor:pointer;padding:14px 2px;font-weight:500;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";float:right;color:var(--mut);font-size:20px;line-height:1}
+details[open] summary::after{content:"\2013"}
+details ul{padding-left:18px;margin:0 0 14px}
+details li{font-size:14.5px;line-height:1.55;margin:5px 0}
+.hn{color:var(--mut);font-size:13px;text-align:center;margin:18px 0 0}
 .seg{display:flex;background:var(--bg);border-radius:14px;padding:4px;gap:4px}
 .bx.side{align-self:flex-start;margin:calc(10px + env(safe-area-inset-top,0px)) 12px 0 auto;width:calc(100% - 24px);max-width:300px;border-radius:28px;padding:14px 10px 10px;max-height:calc(100% - 30px);box-shadow:0 24px 60px rgba(20,25,45,.28);animation:pop .18s ease-out}
 .bx.side .hd{padding:2px 8px 10px}
@@ -222,6 +230,7 @@ function menu(){
  <button class="mi" data-go="prev">Previous month</button>
  <button class="mi" id="selb">Select recording</button><div class="mg" id="mg" hidden>${months().reverse().map(m=>`<button data-ym="${m}">${ymName(m)}</button>`).join("")}</div>
  <button class="mi" data-go="bin">Recycle bin${(D.bin||[]).length?" ("+D.bin.length+")":""}</button>
+ <button class="mi" data-go="help">Help &amp; guide</button>
  <button class="mi" data-go="set">Settings &amp; targets</button>
  <button class="mi" data-go="bk">Backup &amp; restore</button>`,true);
 }
@@ -277,6 +286,7 @@ document.addEventListener("click",ev=>{
  if(g=="cur"){view={p:"report",ym:curYm()};close();return render()}
  if(g=="prev"){view={p:"report",ym:prevYm(curYm())};close();return render()}
  if(el.dataset.th){setTheme(el.dataset.th);return settings()}
+ if(g=="help")return helpSheet();
  if(g=="set")return settings();
  if(el.dataset.bres){const i=D.bin.findIndex(q=>q.id==el.dataset.bres);if(i>=0){const q=D.bin.splice(i,1)[0];delete q.del;D.entries.push(q);save();render();toast("Entry restored")}return binSheet()}
  if(el.dataset.bdel){D.bin=D.bin.filter(q=>q.id!=el.dataset.bdel);save();return binSheet()}
@@ -389,6 +399,60 @@ function dayLabel(d){
  const k=dkey(d.getTime()),n=new Date(),y=new Date(n.getFullYear(),n.getMonth(),n.getDate()-1);
  const base=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d.getDay()]+", "+d.getDate()+" "+MN[d.getMonth()];
  return k==dkey(n.getTime())?"Today · "+base:k==dkey(y.getTime())?"Yesterday · "+base:base;
+}
+function helpSheet(){
+ const sec=(t,items,o)=>`<details${o?" open":""}><summary>${t}</summary><ul>${items.map(i=>`<li>${i}</li>`).join("")}</ul></details>`;
+ open(head("Help & guide")+
+ sec("Quick start",[
+  "The first time you open the app each month, it asks for that month\u2019s income. You can change it later from the month report (tap <b>Edit</b> next to Income).",
+  "Tap <b>+</b> (or double-tap the back of your phone if you set up Back Tap) to add an expense: amount, type, payment method, then <b>Record</b>.",
+  "The date and time are saved automatically.",
+  "Made a mistake on the last one? Open the + popup and tap <b>Edit previous</b>.",
+  "To change or delete any entry, tap it in the list."],true)+
+ sec("Adding expenses",[
+  "<b>Amount</b> can have decimals, for example 125.50.",
+  "<b>Type</b> starts as Food. Pick another from the list.",
+  "<b>Note</b> appears only for Others, Investments and Bill, so you can say what it was for.",
+  "<b>Comment</b> is optional for every entry.",
+  "Entries are grouped by day, newest first, with each day\u2019s total."])+
+ sec("Reading your reports",[
+  "Menu \u2192 <b>Current month</b>, <b>Previous month</b> or <b>Select recording</b> for any month.",
+  "<b>Total expenses</b> = everything except investments. <b>Savings</b> = income \u2212 expenses \u2212 investment.",
+  "<b>Household</b> = rent, food, mobile recharge, grocery, bill, salon, travel.",
+  "<b>Needs</b> = food, travel, rent, grocery, health, salon, mobile recharge, EMI, investment, home.",
+  "<b>Wants</b> = online shopping, sport, entertainment, trip, petrol, others.",
+  "Cards turn green, orange or red against your targets (see Settings). They need that month\u2019s income to be set.",
+  "<b>Monthly trend</b>: tap the names under the chart to show or hide lines. Your choice is remembered.",
+  "<b>Payment methods</b> shows how much you paid with each method and its share.",
+  "<b>View all entries</b> lists every entry of that month. <b>Download Excel</b> saves a spreadsheet to check date by date."])+
+ sec("Settings you can change",[
+  "Menu \u2192 <b>Settings &amp; targets</b>.",
+  "<b>Theme</b>: Auto (follows your phone), Light or Dark.",
+  "<b>Targets</b> as a percent of income: Investment at least, Household at most, Wants orange above and red above. Needs has no target unless you enter one.",
+  "<b>Income</b> is set per month from the report or the monthly prompt."])+
+ sec("Deleting and the Recycle bin",[
+  "Open an entry and tap <b>Delete entry</b> twice to confirm. It moves to the <b>Recycle bin</b> (Menu).",
+  "Deleted entries stay there for 30 days. You can restore them or delete them forever.",
+  "After 30 days they are removed for good."])+
+ sec("Backup: how it works and good habits",[
+  "Your data lives only in this phone\u2019s browser. Nothing is sent anywhere, so nobody else can recover it for you.",
+  "Menu \u2192 <b>Backup &amp; restore</b> \u2192 <b>Save backup file</b>. In the share sheet choose <b>Save to Files</b>, ideally in iCloud Drive.",
+  "To restore: <b>Restore from file</b>, pick the backup, check the summary, then confirm. Restoring <b>replaces</b> what is in the app now.",
+  "Back up on the <b>1st of every month</b> and after adding a lot of entries. Keep the last 2 or 3 files.",
+  "The app shows a reminder in the last 3 days of a month (to download the report) and when 30 days pass without a backup.",
+  "The Excel file is for viewing and sharing. It <b>cannot</b> be restored into the app. Only the backup file can."])+
+ sec("What can erase your data",[
+  "Settings \u2192 Safari \u2192 <b>Clear History and Website Data</b> deletes it.",
+  "A <b>Private</b> Safari tab starts empty and can\u2019t see your saved data. Don\u2019t use Private mode for this app.",
+  "Not opening the app for many weeks can let iOS clear it.",
+  "Closing a tab or the app, or restarting your phone, is <b>safe</b>.",
+  "New phone? Open the link, then restore your backup file."])+
+ sec("Tips",[
+  "Open the app the same way every time (the Home Screen icon added with \u201cOpen as Web App\u201d off, or Safari). Mixing ways creates separate copies of your data.",
+  "To hide Safari\u2019s bottom bar: tap <b>aA</b> in the address bar \u2192 <b>Hide Toolbar</b>.",
+  "Back Tap: Shortcuts \u2192 Open URLs with your app link ending in <b>#add</b>, then Settings \u2192 Accessibility \u2192 Touch \u2192 Back Tap.",
+  "Your data stays private. The web page only delivers the app. Your entries never leave your phone."])+
+ `<p class="hn">Expense Tracker \u00b7 your data stays on this phone</p>`);
 }
 function LIM(){return{inv:25,hh:35,need:null,wantO:15,wantR:20,...(D.lim||{})}}
 let TH="auto";try{TH=localStorage.getItem(K+"_theme")||"auto"}catch(e){}
