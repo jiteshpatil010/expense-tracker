@@ -284,8 +284,6 @@ document.addEventListener("click",ev=>{
  if(g=="bin")return binSheet();
  if(el.id=="dbk")return saveBackup();
  if(el.id=="rok"&&PEND){D=PEND;PEND=null;save();close();view={p:"list",ym:null};render();toast("Backup restored");return}
- if(el.id=="ldt")return loadTest();
- if(el.id=="rmt")return removeTest();
  if(el.id=="sl"){
   const v=["l1","l2","l3","l4","l5"].map(i=>parseFloat(($("#"+i).value||"").replace(",",".")));
   const nd=isNaN(v[2]);
@@ -334,29 +332,6 @@ async function xl(ym){
  catch(e){toast("Could not create the file")}
 }
 
-function loadTest(){
- if(D.entries.some(e=>e.sample)){toast("Test data is already loaded");return}
- let sd=7;const rnd=()=>(sd=(sd*1664525+1013904223)%4294967296)/4294967296;
- const W=[["food",42,60,300],["travel",18,30,250],["grocery",6,200,1500],["petrol",6,300,1100],["ent",6,100,700],["online",3,300,2200],["health",2,150,1200],["sport",2,150,1000],["home",3,200,1800],["salon",2,200,800],["others",4,50,600]];
- const tw=W.reduce((a,w)=>a+w[1],0),now=new Date(),y=now.getFullYear();let id=Date.now();D.sampleInc=[];
- for(let m=0;m<=now.getMonth();m++){
-  const dim=new Date(y,m+1,0).getDate(),last=m==now.getMonth()?now.getDate():dim,ym=y+"-"+pad(m+1);
-  if(!D.income[ym]){D.income[ym]=85000+Math.round(rnd()*10)*1000;D.sampleInc.push(ym)}
-  const add=(day,type,amt,pay,note)=>{if(day>last)return;D.entries.push({id:id++,ts:new Date(y,m,day,8+Math.floor(rnd()*14),Math.floor(rnd()*60)).getTime(),amt,type,pay,note:note||"",comment:"",sample:true})};
-  add(1,"rent",15000,"Bank");add(3,"mobile",399,"UPI");add(5,"emi",8500,"Bank");
-  add(10,"invest",Math.round((19000+rnd()*9000)/500)*500,"Bank","SIP");
-  add(12,"bill",Math.round(1200+rnd()*1500),"UPI","Electricity");add(15,"bill",Math.round(600+rnd()*300),"Credit card","Internet");
-  if(rnd()<.3)add(20,"trip",Math.round((3000+rnd()*5000)/100)*100,"Credit card");
-  const n=Math.round(94*last/dim);
-  for(let i=0;i<n;i++){
-   let r=rnd()*tw,w=W[0];for(const q of W){if(r<q[1]){w=q;break}r-=q[1]}
-   const pays=w[0]=="online"?["Credit card","UPI"]:["UPI","UPI","UPI","Credit card","Cash","Bank"];
-   add(1+Math.floor(rnd()*last),w[0],Math.max(10,Math.round((w[2]+rnd()*(w[3]-w[2]))/10)*10),pays[Math.floor(rnd()*pays.length)],w[0]=="others"?"Misc":"");
-  }
- }
- save();close();view={p:"list",ym:null};render();toast("Test data loaded");
-}
-function removeTest(){D.entries=D.entries.filter(e=>!e.sample);(D.sampleInc||[]).forEach(m=>delete D.income[m]);D.sampleInc=[];save();close();render();toast("Test data removed")}
 function ls(k){try{return localStorage.getItem(K+k)}catch(e){return null}}
 function ss(k,v){try{localStorage.setItem(K+k,v)}catch(e){}}
 function todayStr(){const n=new Date();return n.getFullYear()+"-"+pad(n.getMonth()+1)+"-"+pad(n.getDate())}
@@ -423,9 +398,7 @@ function settings(){
  open(head("Settings")+`<label>Theme</label><div class="seg">${["auto","light","dark"].map(t=>`<button data-th="${t}" class="${TH==t?"on":""}">${t[0].toUpperCase()+t.slice(1)}</button>`).join("")}</div>
  <h2 style="margin-top:24px">Targets, as % of income</h2>
  ${f("l1","Investment: at least",l.inv)}${f("l2","Household: at most",l.hh)}${f("l3","Needs: at most (optional, leave blank for none)",l.need==null?"":l.need)}${f("l4","Wants: turns orange above",l.wantO)}${f("l5","Wants: turns red above",l.wantR)}
- <div class="btns"><button class="btn" id="sl">Save targets</button></div>
- <h2 style="margin-top:28px">Test data</h2><p class="sub">Adds about 100 sample entries for each month from January to today so you can try the reports. Your own entries are never touched.</p>
- <div class="btns" style="margin-top:0"><button class="btn s" id="ldt">Load test data</button><button class="btn s" id="rmt">Remove test data</button></div>`);
+ <div class="btns"><button class="btn" id="sl">Save targets</button></div>`);
 }
 setTheme(TH);purgeBin();
 

@@ -37,10 +37,9 @@ External script: SheetJS `xlsx@0.18.5` from `cdnjs.cloudflare.com` (used only fo
 ```
 D = {
   income:  { "2026-10": 90000, ... },          // per month, key = YYYY-MM
-  entries: [ { id, ts, amt, type, pay, note, comment, sample? } ],
+  entries: [ { id, ts, amt, type, pay, note, comment } ],
   bin:     [ { ...entry, del } ],              // recycle bin, del = deleted-at ms; purged after 30 days
-  lim:     { inv, hh, need, wantO, wantR },    // optional targets, % of income
-  sampleInc: [ "2026-01", ... ]                // months whose income came from test data
+  lim:     { inv, hh, need, wantO, wantR }     // optional targets, % of income
 }
 ```
 - `id` = creation time in ms (unique). `ts` = entry date-time in ms (local time is used for month grouping).
@@ -69,10 +68,10 @@ D = {
 - **Backup & restore**: saves a `.json` file via the iOS share sheet ("Save to Files"); restore picks a file, validates checksum and every entry, shows a summary, replaces data only after confirmation.
 - **Recycle bin**: 30-day retention, restore or delete forever, empty bin.
 - **Banners** on the main page: last 3 days of month → download report; no backup in 30 days → back up. "Remind me tomorrow" hides both for the day.
-- **Settings**: theme (Auto/Light/Dark), targets, test data (loads ~100 sample entries per month Jan→today, flagged `sample:true`; "Remove test data" deletes only those).
+- **Settings**: theme (Auto/Light/Dark) and targets. (There is deliberately **no** test-data feature: it could overwrite real data by mistake. For testing, an AI should generate sample data in its own test script, never in the shipped app.)
 
 ## 7. Code map (inside `index.html`)
-CSS variables at top (`--bg --card --ink --mut --line --acc --g --r --o --sv --ex`, dark overrides) → HTML shell (`#app`, `#fab`, `#ov/#bx` sheet, `#toast`) → JS: constants (`T` types, `PAY`, groups `HH/NEED/WANT`), storage (`D`, `save`), `stat(ym)` (all monthly maths), screens (`render`, `list`, `report`, `card`, `chart`, `payBlock`), sheets (`open`, `close`, `menu`, `form`, `incomeSheet`, `settings`, `binSheet`, `backup`, `confirmRestore`), `xl()` Excel, `saveFile()` (share sheet with download fallback), `saveBackup/readBackup`, `loadTest/removeTest`, one delegated click handler (`data-*` attributes), start-up block at the bottom (service worker registration, `#add` handling).
+CSS variables at top (`--bg --card --ink --mut --line --acc --g --r --o --sv --ex`, dark overrides) → HTML shell (`#app`, `#fab`, `#ov/#bx` sheet, `#toast`) → JS: constants (`T` types, `PAY`, groups `HH/NEED/WANT`), storage (`D`, `save`), `stat(ym)` (all monthly maths), screens (`render`, `list`, `report`, `card`, `chart`, `payBlock`), sheets (`open`, `close`, `menu`, `form`, `incomeSheet`, `settings`, `binSheet`, `backup`, `confirmRestore`), `xl()` Excel, `saveFile()` (share sheet with download fallback), `saveBackup/readBackup`, one delegated click handler (`data-*` attributes), start-up block at the bottom (service worker registration, `#add` handling).
 
 ## 8. Platform facts that shaped the design (iPhone, no Mac)
 - Back Tap → Shortcuts → **Open URL** `https://USERNAME.github.io/REPO/#add` opens the app in **Safari**.
@@ -81,9 +80,10 @@ CSS variables at top (`--bg --card --ink --mut --line --acc --g --r --o --sv --e
 - Real push notifications are not used (need a server).
 
 ## 9. Test status
-Verified in automated browser tests (Playwright, iPhone-size viewport): entry validation, XSS escaping, edit/delete/recycle bin, 100 entries × 10 months, all reports, trend chart with all 23 lines, backup save/restore incl. tampered and junk files, 20,000-entry performance (list ≈ 20 ms, report ≈ 60 ms), blocked storage, offline load, `#add` deep link. **Not tested on a physical iPhone:** share-sheet "Save to Files", Excel download, file picker restore, Back Tap. If one of these fails on the phone, fix `saveFile()` or the file input first.
+Verified in automated browser tests (Playwright, iPhone-size viewport): entry validation, XSS escaping, edit/delete/recycle bin, all reports, trend chart with all 23 lines, backup save/restore incl. tampered and junk files, 20,000-entry performance (list ≈ 20 ms, report ≈ 60 ms), blocked storage, offline load, `#add` deep link. **Not tested on a physical iPhone:** share-sheet "Save to Files", Excel download, file picker restore, Back Tap. If one of these fails on the phone, fix `saveFile()` or the file input first.
 
 ## 10. Change log
+- v2: removed the test-data buttons from Settings (risk of mixing fake data with real data). Service worker cache is now `expense-tracker-v2`.
 - v1: initial build — quick entry, month reports, trend chart with Y axis, targets, themes, payment-method share, Excel export, file backup/restore, recycle bin, date-grouped list, in-app reminders, iOS tap fixes, PWA packaging (manifest, service worker, icons).
 
 ## 11. Ideas not built yet
