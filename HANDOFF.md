@@ -27,7 +27,7 @@ A private, single-page expense tracker for one person on an iPhone. It is a PWA 
 | `index.html` | Entire app (HTML + CSS + JS, ~36 KB) |
 | `manifest.webmanifest` | PWA name, icons, standalone display |
 | `sw.js` | Service worker: offline cache. Own files network-first; cdnjs Excel library cached after first use |
-| `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App icons (indigo with three white bars) |
+| `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` | App icons: owner's 3D rupee-wallet image cut out and placed on an indigo gradient (opaque square, as iOS requires) |
 | `HANDOFF.md` | This file |
 
 Hosting: GitHub Pages, project site, so all paths are **relative** (`sw.js`, not `/sw.js`).
@@ -83,6 +83,7 @@ CSS variables at top (`--bg --card --ink --mut --line --acc --g --r --o --sv --e
 Verified in automated browser tests (Playwright, iPhone-size viewport): entry validation, XSS escaping, edit/delete/recycle bin, all reports, trend chart with all 23 lines, backup save/restore incl. tampered and junk files, 20,000-entry performance (list ≈ 20 ms, report ≈ 60 ms), blocked storage, offline load, `#add` deep link. **Not tested on a physical iPhone:** share-sheet "Save to Files", Excel download, file picker restore, Back Tap. If one of these fails on the phone, fix `saveFile()` or the file input first.
 
 ## 10. Change log
+- v3: new app icon (rupee wallet). Service worker cache `expense-tracker-v3`. On iPhone the Home Screen icon is copied when added, so the owner must delete the old icon and add it again to see the new one.
 - v2: removed the test-data buttons from Settings (risk of mixing fake data with real data). Service worker cache is now `expense-tracker-v2`.
 - v1: initial build — quick entry, month reports, trend chart with Y axis, targets, themes, payment-method share, Excel export, file backup/restore, recycle bin, date-grouped list, in-app reminders, iOS tap fixes, PWA packaging (manifest, service worker, icons).
 
