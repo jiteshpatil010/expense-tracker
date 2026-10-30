@@ -170,6 +170,7 @@ function report(ym){
  const invC=!inc?"":x.inv<l.inv/100*inc?"r":"g";
  const wC=!inc?"":x.want>l.wantR/100*inc?"r":x.want>l.wantO/100*inc?"o":"g";
  let h=`<p class="sub">Income ${inc?inr(inc):"not set"} · <button class="lnk" style="padding:0" data-inc="${ym}">${inc?"Edit":"Set income"}</button></p>
+ <div class="btns" style="margin:0 0 6px"><button class="btn" data-addym="${ym}">＋ Add expense to ${ymName(ym)}</button></div>
  <div class="btns" style="margin:0 0 6px"><button class="btn s" data-all="${ym}">View all entries</button><button class="btn s" data-xl="${ym}">Download Excel</button></div>
  <div class="kp">
  ${card("Total expenses",x.total,pct(x.total,inc),"ex",inc?Math.min(100,x.total/inc*100):0)}
@@ -234,15 +235,27 @@ function menu(){
  <button class="mi" data-go="set">Settings &amp; targets</button>
  <button class="mi" data-go="bk">Backup &amp; restore</button>`,true);
 }
-function form(id){
+let formReturnView=null,formTargetYm=null;
+function monthDateDefault(ym){
+ const now=new Date(),[y,m]=ym.split("-").map(Number),last=new Date(y,m,0).getDate();
+ return y+"-"+pad(m)+"-"+pad(Math.min(now.getDate(),last));
+}
+function form(id,ym){
  const e=id?D.entries.find(q=>q.id==id):null;editId=e?e.id:null;
- open(head(e?"Edit entry":"Expense")+`
+ formReturnView={...view};
+ formTargetYm=e?ymOf(e.ts):(ym||((view.p=="report"||view.ym)?view.ym:curYm()));
+ const dateValue=e?dkey(e.ts):monthDateDefault(formTargetYm);
+ const [fy,fm]=formTargetYm.split("-").map(Number);
+ const minDate=fy+"-"+pad(fm)+"-01",maxDate=fy+"-"+pad(fm)+"-"+pad(new Date(fy,fm,0).getDate());
+ open(head(e?"Edit entry":"Add expense · "+ymName(formTargetYm))+`
  <label for="a">Amount</label><input id="a" inputmode="decimal" placeholder="0.00" value="${e?e.amt:""}">
+ <label for="dt">Expense date</label><input id="dt" type="date" value="${dateValue}" ${e?"":"min=\""+minDate+"\" max=\""+maxDate+"\""} required>
+ <p class="sub" style="margin:5px 0 0">Choose the date this expense actually happened.</p>
  <label for="t">Type</label><select id="t">${T.map(t=>`<option value="${t[0]}"${(e?e.type:"food")==t[0]?" selected":""}>${t[1]}</option>`).join("")}</select>
  <label for="p">Payment method</label><select id="p">${PAY.map(p=>`<option${e&&e.pay==p?" selected":""}>${p}</option>`).join("")}</select>
  <div id="nw"><label for="n">Note</label><input id="n" maxlength="80" value="${e?esc(e.note):""}"></div>
  <label for="c">Comment (optional)</label><input id="c" maxlength="140" value="${e?esc(e.comment):""}">
- <div class="btns"><button class="btn" id="rec">${e?"Save changes":"Record"}</button><button class="btn s" id="prv">Edit previous</button></div>
+ <div class="btns"><button class="btn" id="rec">${e?"Save changes":"Record expense"}</button><button class="btn s" id="prv">Edit previous</button></div>
  ${e?`<button class="btn s" id="del" style="width:100%;margin-top:12px;color:#c9566c;border-color:#c9566c">Delete entry</button>`:""}`);
  const sync=()=>$("#nw").hidden=!NOTE.includes($("#t").value);
  $("#t").onchange=sync;sync();
@@ -271,7 +284,8 @@ document.addEventListener("click",ev=>{
  if(el.id=="ov"){if(ev.target.id=="ov")close();return}
  if(el.dataset.close!==undefined)return close();
  if(el.id=="mb")return menu();
- if(el.id=="fab")return form();
+ if(el.id=="fab")return form(null,view.ym||(view.p=="report"?view.ym:curYm()));
+ if(el.dataset.addym)return form(null,el.dataset.addym);
  if(el.dataset.edit)return form(el.dataset.edit);
  if(el.dataset.all){view={p:"list",ym:el.dataset.all};return render()}
  if(el.dataset.rep){view={p:"report",ym:el.dataset.rep};return render()}
@@ -306,10 +320,26 @@ document.addEventListener("click",ev=>{
  if(el.id=="rec"){
   const amt=parseFloat(($("#a").value||"").replace(",","."));
   if(!(amt>0)||amt>1e7){toast(amt>1e7?"Amount is too large":"Enter an amount");$("#a").focus();return}
+  const dateValue=$("#dt").value;
+  if(!dateValue){toast("Choose an expense date");$("#dt").focus();return}
+  const [dy,dm,dd]=dateValue.split("-").map(Number),chosenDate=new Date(dy,dm-1,dd);
+  if(chosenDate.getFullYear()!=dy||chosenDate.getMonth()!=dm-1||chosenDate.getDate()!=dd){toast("Choose a valid expense date");return}
+  if(!editId&&ymOf(chosenDate.getTime())!=formTargetYm){toast("Choose a date within "+ymName(formTargetYm));return}
   const type=$("#t").value,rec={amt,type,pay:$("#p").value,note:NOTE.includes(type)?$("#n").value.trim():"",comment:$("#c").value.trim()};
-  if(editId){Object.assign(D.entries.find(q=>q.id==editId),rec);toast("Changes saved");save();close();return render()}
-  else{D.entries.push({id:Date.now(),ts:Date.now(),...rec});toast("Recorded")}
-  save();close();view={p:"list",ym:null};return render();
+  if(editId){
+   const existing=D.entries.find(q=>q.id==editId);
+   if(!existing){toast("Entry not found");close();return render()}
+   const oldDate=new Date(existing.ts);
+   chosenDate.setHours(oldDate.getHours(),oldDate.getMinutes(),oldDate.getSeconds(),oldDate.getMilliseconds());
+   const newTs=chosenDate.getTime(),newYm=ymOf(newTs),oldYm=ymOf(existing.ts);
+   Object.assign(existing,rec,{ts:newTs});toast("Changes saved");save();close();view=formReturnView||{p:"list",ym:null};
+   if(newYm!=oldYm){view={p:"list",ym:newYm}}
+   return render()
+  }else{
+   const now=new Date();chosenDate.setHours(now.getHours(),now.getMinutes(),now.getSeconds(),now.getMilliseconds());
+   const id=Date.now();D.entries.push({id,ts:chosenDate.getTime(),...rec});toast("Expense recorded for "+dateValue.split("-").reverse().join("/"));
+  }
+  save();close();view=formReturnView||{p:"list",ym:null};return render();
  }
  if(el.id=="del"){if(!el.dataset.c){el.dataset.c=1;el.textContent="Tap again to confirm delete";return}const q=D.entries.find(z=>z.id==editId);if(q){D.bin=D.bin||[];D.bin.push({...q,del:Date.now()})}D.entries=D.entries.filter(q=>q.id!=editId);save();close();toast("Moved to recycle bin");return render()}
  if(el.id=="si"){
@@ -406,7 +436,7 @@ function helpSheet(){
  sec("Quick start",[
   "The first time you open the app each month, it asks for that month\u2019s income. You can change it later from the month report (tap <b>Edit</b> next to Income).",
   "Tap <b>+</b> (or double-tap the back of your phone if you set up Back Tap) to add an expense: amount, type, payment method, then <b>Record</b>.",
-  "The date and time are saved automatically.",
+  "Choose the actual date in the <b>Expense date</b> field. It defaults to the month you are viewing.",
   "Made a mistake on the last one? Open the + popup and tap <b>Edit previous</b>.",
   "To change or delete any entry, tap it in the list."],true)+
  sec("Adding expenses",[
@@ -414,6 +444,8 @@ function helpSheet(){
   "<b>Type</b> starts as Food. Pick another from the list.",
   "<b>Note</b> appears only for Others, Investments and Bill, so you can say what it was for.",
   "<b>Comment</b> is optional for every entry.",
+  "Forgot to record an expense? Open that month from the menu and tap <b>Add expense</b>. The date picker is restricted to that month, so the entry goes into the correct monthly report.",
+  "You can also use the floating <b>+</b> button while viewing a month. To correct an existing entry's date, open it and change <b>Expense date</b>.",
   "Entries are grouped by day, newest first, with each day\u2019s total."])+
  sec("Reading your reports",[
   "Menu \u2192 <b>Current month</b>, <b>Previous month</b> or <b>Select recording</b> for any month.",

@@ -59,11 +59,11 @@ D = {
 - Report cards show only "N% of income", never the limit text.
 
 ## 6. Features (current)
-- **Quick entry popup** (`#add` link, or + button): Amount (decimal, comma ok, max 1 crore), Type (default Food), Payment method, Note (conditional), Comment, **Record**, **Edit previous** (loads the most recently recorded entry). Edit mode adds **Delete entry** (two taps) → recycle bin.
+- **Quick entry popup** (`#add` link, or + button): Amount (decimal, comma ok, max 1 crore), **Expense date** (defaults to the month being viewed), Type (default Food), Payment method, Note (conditional), Comment, **Record expense**, **Edit previous** (loads the most recently recorded entry). New entries can be backdated within the selected month. Edit mode allows changing the entry date and adds **Delete entry** (two taps) → recycle bin.
 - **Income prompt** on first open of each month (editable any time from the month report). With `#add` and no income yet, income is asked first, then the expense popup opens.
 - **Main page**: current month entries grouped by day (Today / Yesterday labels, daily totals), newest first; tap a row to edit.
 - **Menu (≡, top right)**: Entries, Current month, Previous month, Select recording (month grid), Recycle bin, **Help & guide**, Settings & targets, Backup & restore.
-- **Month report**: Total expenses + Savings hero cards, Investment/Household/Wants/Needs cards, **View all entries**, **Download Excel**, spend-by-category bars, **Monthly trend** line chart (Y axis with nice ticks; chips to toggle Expenses/Savings/Investment/Needs/Wants/Household and every category; default Expenses + Investment + Savings; choice remembered), **Payment methods** bars (amount and % share).
+- **Month report**: Total expenses + Savings hero cards, Investment/Household/Wants/Needs cards, **Add expense to [month]** (opens the entry form with dates restricted to that month), **View all entries**, **Download Excel**, spend-by-category bars, **Monthly trend** line chart (Y axis with nice ticks; chips to toggle Expenses/Savings/Investment/Needs/Wants/Household and every category; default Expenses + Investment + Savings; choice remembered), **Payment methods** bars (amount and % share).
 - **Excel** (SheetJS): sheets Summary (incl. payment methods), Entries, By date, Trend.
 - **Backup & restore**: saves a `.json` file via the iOS share sheet ("Save to Files"); restore picks a file, validates checksum and every entry, shows a summary, replaces data only after confirmation.
 - **Recycle bin**: 30-day retention, restore or delete forever, empty bin.
@@ -83,6 +83,7 @@ CSS variables at top (`--bg --card --ink --mut --line --acc --g --r --o --sv --e
 Verified in automated browser tests (Playwright, iPhone-size viewport): entry validation, XSS escaping, edit/delete/recycle bin, all reports, trend chart with all 23 lines, backup save/restore incl. tampered and junk files, 20,000-entry performance (list ≈ 20 ms, report ≈ 60 ms), blocked storage, offline load, `#add` deep link. **Not tested on a physical iPhone:** share-sheet "Save to Files", Excel download, file picker restore, Back Tap. If one of these fails on the phone, fix `saveFile()` or the file input first.
 
 ## 10. Change log
+- v7: added backdated expense entry. The form includes an expense date; month reports have a direct **Add expense to [month]** action; the floating + button uses the month currently being viewed. New entries are constrained to the selected month, edits can change the date, and the existing `ts` field/data model and v1 backup format remain unchanged. Updated Help & guide. Cache `expense-tracker-v7`.
 - v6: added **Help & guide** in the menu (`helpSheet()`): quick start, adding expenses, reports and formulas, settings, recycle bin, backup habits, what can erase data, tips. **Keep this text in sync whenever a feature changes.** Cache `expense-tracker-v6`.
 - v5: icon files renamed to `app-icon-*.png` because iOS kept showing the old cached icon when adding to Home Screen. **When changing the icon again, use new file names** (e.g. `app-icon-v6-180.png`) and update `index.html`, `manifest.webmanifest`, `sw.js`. Cache `expense-tracker-v5`.
 - v4: icon background changed to white; cache `expense-tracker-v4`.
